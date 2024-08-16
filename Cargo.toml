@@ -1,0 +1,19 @@
+[package]
+name = "mediatools"
+version = "0.1.0"
+license = "Apache-2.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+ffmpeg-next = { git = "https://github.com/zmwangx/rust-ffmpeg.git" }
+lazy-regex = "3"
+log = "0.4"
+simplelog = "0.12"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+strip = true
+lto = true
