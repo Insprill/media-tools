@@ -7,10 +7,9 @@ edition = "2021"
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
-ffmpeg-next = { git = "https://github.com/zmwangx/rust-ffmpeg.git" }
 lazy-regex = "3"
 log = "0.4"
-simplelog = "0.12"
+simplelog = { version = "0.12", features = ["paris"] }
 
 [profile.release]
 panic = "abort"
