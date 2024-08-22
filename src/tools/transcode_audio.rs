@@ -1,6 +1,8 @@
-use anyhow::{bail, ensure, Context, Result};
-use simplelog::{error, info, warn};
-use std::{fs, path::Path, process::Command};
+use anyhow::{ensure, Context, Result};
+use simplelog::{error, warn};
+use std::{fs, path::Path};
+
+use crate::{path_to_str, utils};
 
 pub fn run(
     src_path: &Path,
@@ -48,13 +50,7 @@ fn process_dir(
 
     fs::create_dir_all(dest_path)?;
 
-    for entry in fs::read_dir(&src_path)
-        .with_context(|| format!("Failed to read directory: {}", src_path.display()))?
-    {
-        let entry =
-            entry.with_context(|| format!("Failed to access entry in: {}", src_path.display()))?;
-        let path = entry.path();
-
+    for path in utils::read_dir(src_path, |_| true)? {
         let strip_prefix = if nested {
             src_path.parent().context("no parent?")?
         } else {
@@ -76,6 +72,9 @@ fn process_dir(
                 true,
             )?;
         } else {
+            if path.extension().unwrap_or_default().to_string_lossy() != src_container {
+                continue;
+            }
             if let Some(parent_dir) = out_path.parent() {
                 fs::create_dir_all(parent_dir)?;
             }
@@ -115,7 +114,7 @@ fn validate_params(bitrate: &str, codec: &str, container: &str) -> bool {
     } else {
         error!("Unsupported codec '{}'!", codec);
     }
-    return true;
+    true
 }
 
 fn transcode_file(
@@ -129,56 +128,28 @@ fn transcode_file(
 ) -> Result<()> {
     ensure!(src.is_file(), "transcode_file does not accept directories!");
 
-    // Command essentials
-    let mut cmd = Command::new("ffmpeg");
-    cmd.arg(if overwrite { "-y" } else { "-n" })
-        .arg("-i")
-        .arg(src)
-        .arg("-acodec")
-        .arg(codec)
-        .arg("-ab")
-        .arg(bitrate)
-        .arg("-map_metadata")
-        .arg("0")
-        .arg("-id3v2_version")
-        .arg("3");
+    let mut args = vec![
+        if overwrite { "-y" } else { "-n" },
+        "-i",
+        path_to_str!(src)?,
+        "-acodec",
+        codec,
+        "-ab",
+        bitrate,
+        "-map_metadata",
+        "0",
+        "-id3v2_version",
+        "3",
+    ];
 
     // Codec-specific args
     if codec.contains("aac") {
-        cmd.arg("-vn");
+        args.push("-vn");
     }
 
     // Last arg must be the output file
-    cmd.arg(dest.with_extension(container));
+    let dest_path = dest.with_extension(container);
+    args.push(path_to_str!(dest_path)?);
 
-    info!("{:?}", cmd);
-
-    let output = cmd.output()?;
-
-    let mut failed = false;
-    //FFmpeg outputs everything to stderr, *not* stdout!
-    for line in String::from_utf8_lossy(&output.stderr).lines() {
-        let out = format!("<green>[FFmpeg]</> {}", line);
-        if line.contains("Error")
-            || line.contains("Conversion failed")
-            || line.contains("Unknown encoder")
-        {
-            error!("{}", out);
-            failed = true;
-        } else if !qffmpeg {
-            info!("{}", out)
-        }
-    }
-    if failed {
-        bail!(
-            "Aborting due to ffmpeg failure!{}",
-            if qffmpeg {
-                " Run without '-q' or '--qffmpeg' to see the full ffmpeg output for why it failed."
-            } else {
-                ""
-            }
-        );
-    }
-
-    Ok(())
+    utils::run_ffmpeg(qffmpeg, args, Option::None)
 }
