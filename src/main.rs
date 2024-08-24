@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use log::LevelFilter;
 use simplelog::{ColorChoice, TermLogger, TerminalMode};
-use tools::{cleanup_file_names, merge_videos, transcode_audio};
+use tools::{cleanup_file_names, merge_videos, split_audio, transcode_audio};
 
 mod tools;
 mod utils;
@@ -70,6 +70,27 @@ pub enum Commands {
         #[clap(long, short)]
         qffmpeg: bool,
     },
+    SplitAudio {
+        /// The path to the file to split.
+        src_file: PathBuf,
+        /// The directory to put the split up files.
+        dest_path: PathBuf,
+        /// The file containing the timestampes used to split and label each file.
+        timestamps_file: PathBuf,
+        /// The artist of the audio.
+        artist: Option<String>,
+        /// The album of the audio.
+        album: Option<String>,
+        /// The date of the audio (year-only).
+        date: Option<String>,
+        /// Force overwrite any existing files.
+        #[clap(long, short)]
+        overwrite: bool,
+        /// Hides FFmpeg's output. If commands aren't working as expected, omit this flag to see
+        /// what's going on.
+        #[clap(long, short)]
+        qffmpeg: bool,
+    },
 }
 fn main() -> Result<()> {
     TermLogger::init(
@@ -115,6 +136,25 @@ fn main() -> Result<()> {
             &content_path,
             &dest_path,
             use_content_names,
+            overwrite,
+            qffmpeg,
+        )?,
+        Commands::SplitAudio {
+            src_file,
+            dest_path,
+            timestamps_file,
+            artist,
+            album,
+            date,
+            overwrite,
+            qffmpeg,
+        } => split_audio::run(
+            &src_file,
+            &dest_path,
+            &timestamps_file,
+            artist,
+            album,
+            date,
             overwrite,
             qffmpeg,
         )?,
