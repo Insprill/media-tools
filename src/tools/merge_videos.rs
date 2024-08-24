@@ -57,6 +57,11 @@ pub fn run(
             "0",
             "-map_metadata",
             "0",
+            // Don't copy video/audio from input 0
+            "-map",
+            "-0:v",
+            "-map",
+            "-0:a",
             // Don't re-encode anything
             "-c",
             "copy",
