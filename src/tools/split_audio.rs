@@ -2,7 +2,6 @@ use std::{fs, path::Path};
 
 use anyhow::{bail, Context, Result};
 use lazy_regex::{lazy_regex, Lazy, Regex};
-use simplelog::info;
 
 use crate::{path_to_str, utils};
 
@@ -35,7 +34,7 @@ pub fn run(
         .lines()
         .map(|l| l.trim())
         .filter(|l| !l.is_empty())
-        .map(|l| parse_timestamp(l))
+        .map(parse_timestamp)
         .collect::<Result<Vec<Timestamp>>>()?;
 
     let is_one_disc = timestamps.iter().all(|t| t.disc == 1);
@@ -67,19 +66,19 @@ pub fn run(
 
         if let Some(ref artist) = meta_artist {
             args.push("-metadata");
-            args.push(&artist);
+            args.push(artist);
         }
         if let Some(ref album_artist) = meta_album_artist {
             args.push("-metadata");
-            args.push(&album_artist);
+            args.push(album_artist);
         }
         if let Some(ref album) = meta_album {
             args.push("-metadata");
-            args.push(&album);
+            args.push(album);
         }
         if let Some(ref date) = meta_date {
             args.push("-metadata");
-            args.push(&date);
+            args.push(date);
         }
 
         let meta_title = &format!("title={}", stamp.title);
@@ -104,7 +103,7 @@ pub fn run(
         };
         args.push(path_to_str!(out_file)?);
 
-        utils::run_ffmpeg(qffmpeg, args, Option::None)?;
+        utils::run_ffmpeg(qffmpeg, args)?;
     }
 
     Ok(())

@@ -68,7 +68,7 @@ pub fn run(
             path_to_str!(dest_file)?,
         ];
 
-        utils::run_ffmpeg(qffmpeg, args, Option::None)?;
+        utils::run_ffmpeg(qffmpeg, args)?;
     }
 
     Ok(())

@@ -151,5 +151,5 @@ fn transcode_file(
     let dest_path = dest.with_extension(container);
     args.push(path_to_str!(dest_path)?);
 
-    utils::run_ffmpeg(qffmpeg, args, Option::None)
+    utils::run_ffmpeg(qffmpeg, args)
 }

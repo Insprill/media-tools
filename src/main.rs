@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use log::LevelFilter;
 use simplelog::{ColorChoice, TermLogger, TerminalMode};
-use tools::{cleanup_file_names, merge_videos, split_audio, transcode_audio};
+use tools::{cleanup_file_names, merge_videos, split_audio, transcode_audio, transcode_video};
 
 mod tools;
 mod utils;
@@ -40,6 +40,31 @@ pub enum Commands {
         codec: String,
         /// The container to place the files in.
         container: String,
+        /// Force overwrite any existing files.
+        #[clap(long, short)]
+        overwrite: bool,
+        /// Hides FFmpeg's output. If commands aren't working as expected, omit this flag to see
+        /// what's going on.
+        #[clap(long, short)]
+        qffmpeg: bool,
+    },
+    // Transcodes all video files in a directory to AV1.
+    #[command(arg_required_else_help = true)]
+    TranscodeVideoAV1 {
+        /// The source directory to transcode from.
+        src_path: PathBuf,
+        /// The destination path. If it doesn't exist, it will be created.
+        dest_path: PathBuf,
+        /// SVT-AV1 preset.
+        preset: u8,
+        /// SVT-AV1 CRF.
+        crf: u8,
+        /// SVT-AV1 Keyframe internal. (120 = 5sec at 24fps).
+        keyframe_interval: u16,
+        /// Forces SVT-AV1 to encode with 10-bit color. This can slightly improve quality even on
+        /// an 8-bit source.
+        #[clap(long, short)]
+        force_10bit: bool,
         /// Force overwrite any existing files.
         #[clap(long, short)]
         overwrite: bool,
@@ -121,6 +146,25 @@ fn main() -> Result<()> {
             &bitrate,
             &codec,
             &container,
+            overwrite,
+            qffmpeg,
+        )?,
+        Commands::TranscodeVideoAV1 {
+            src_path,
+            dest_path,
+            preset,
+            crf,
+            keyframe_interval,
+            force_10bit,
+            overwrite,
+            qffmpeg,
+        } => transcode_video::run(
+            &src_path,
+            &dest_path,
+            preset,
+            crf,
+            keyframe_interval,
+            force_10bit,
             overwrite,
             qffmpeg,
         )?,

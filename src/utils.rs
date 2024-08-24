@@ -20,15 +20,12 @@ where
     Ok(paths)
 }
 
-pub fn run_ffmpeg<I, S>(quiet: bool, args: I, current_dir: Option<&Path>) -> Result<()>
+pub fn run_ffmpeg<I, S>(quiet: bool, args: I) -> Result<()>
 where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
     let mut cmd = Command::new("ffmpeg");
-    if let Some(dir) = current_dir {
-        cmd.current_dir(dir);
-    }
     cmd.args(args);
 
     info!("{:?}", cmd);
