@@ -9,6 +9,8 @@ pub fn run(
     base_path: &Path,
     content_path: &Path,
     dest_path: &Path,
+    video_from_base: bool,
+    audio_from_base: bool,
     use_content_names: bool,
     overwrite: bool,
     qffmpeg: bool,
@@ -40,33 +42,48 @@ pub fn run(
         };
         let dest_file = dest_path.join(file_name_to_copy.file_name().context("No file name?")?);
 
-        let args = vec![
+        let mut args = vec![
             if overwrite { "-y" } else { "-n" },
             "-i",
             path_to_str!(base_file)?,
             "-i",
             path_to_str!(content_file)?,
-            // Copy the video stream from input 1 (dest)
-            "-map",
-            "1:v",
-            // Copy the audio stream from input 1 (dest)
-            "-map",
-            "1:a",
-            // Copy everything else from input 0 (src)
-            "-map",
-            "0",
-            "-map_metadata",
-            "0",
-            // Don't copy video/audio from input 0
-            "-map",
-            "-0:v",
-            "-map",
-            "-0:a",
-            // Don't re-encode anything
-            "-c",
-            "copy",
-            path_to_str!(dest_file)?,
         ];
+
+        // Copy the video stream from input 1
+        if !video_from_base {
+            args.push("-map");
+            args.push("1:v");
+        }
+
+        // Copy the audio stream from input 1
+        if !audio_from_base {
+            args.push("-map");
+            args.push("1:a");
+        }
+
+        // Copy everything else from input 0
+        args.push("-map");
+        args.push("0");
+        args.push("-map_metadata");
+        args.push("0");
+
+        // Don't copy video from input 0
+        if !video_from_base {
+            args.push("-map");
+            args.push("-0:v");
+        }
+
+        // Don't copy audio from input 0
+        if !audio_from_base {
+            args.push("-map");
+            args.push("-0:a");
+        }
+
+        // Don't re-encode anything
+        args.push("-c");
+        args.push("copy");
+        args.push(path_to_str!(dest_file)?);
 
         utils::run_ffmpeg(qffmpeg, args)?;
     }

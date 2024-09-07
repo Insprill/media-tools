@@ -83,6 +83,12 @@ pub enum Commands {
         content_path: PathBuf,
         /// The directory to write the modified files into.
         dest_path: PathBuf,
+        /// Take the video streams from the base files instead of the content files.
+        #[clap(long, short)]
+        video_from_base: bool,
+        /// Take the audio streams from the base files instead of the content files.
+        #[clap(long, short)]
+        audio_from_base: bool,
         /// Whether the new files should take the name of the content file instead of the base
         /// file.
         #[clap(long, short)]
@@ -172,6 +178,8 @@ fn main() -> Result<()> {
             base_path,
             content_path,
             dest_path,
+            video_from_base,
+            audio_from_base,
             use_content_names,
             overwrite,
             qffmpeg,
@@ -179,6 +187,8 @@ fn main() -> Result<()> {
             &base_path,
             &content_path,
             &dest_path,
+            video_from_base,
+            audio_from_base,
             use_content_names,
             overwrite,
             qffmpeg,
