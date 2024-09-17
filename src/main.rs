@@ -4,7 +4,10 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use log::LevelFilter;
 use simplelog::{ColorChoice, TermLogger, TerminalMode};
-use tools::{cleanup_file_names, merge_videos, split_audio, transcode_audio, transcode_video};
+use tools::{
+    cleanup_file_names, merge_videos, set_default_tracks, split_audio, transcode_audio,
+    transcode_video,
+};
 
 mod tools;
 mod utils;
@@ -93,6 +96,23 @@ pub enum Commands {
         /// file.
         #[clap(long, short)]
         use_content_names: bool,
+        /// Force overwrite any existing files.
+        #[clap(long, short)]
+        overwrite: bool,
+        /// Hides FFmpeg's output. If commands aren't working as expected, omit this flag to see
+        /// what's going on.
+        #[clap(long, short)]
+        qffmpeg: bool,
+    },
+    SetDefaultTracks {
+        /// The directory containing the files to preserve metadata/attachments from.
+        base_path: PathBuf,
+        /// The directory to write the modified files into.
+        dest_path: PathBuf,
+        /// The audio stream to set as default (zero-indexed).
+        audio_stream: u8,
+        /// The subtitle stream to set as default (zero-indexed).
+        subtitle_stream: u8,
         /// Force overwrite any existing files.
         #[clap(long, short)]
         overwrite: bool,
@@ -190,6 +210,21 @@ fn main() -> Result<()> {
             video_from_base,
             audio_from_base,
             use_content_names,
+            overwrite,
+            qffmpeg,
+        )?,
+        Commands::SetDefaultTracks {
+            base_path,
+            dest_path,
+            audio_stream,
+            subtitle_stream,
+            overwrite,
+            qffmpeg,
+        } => set_default_tracks::run(
+            &base_path,
+            &dest_path,
+            audio_stream,
+            subtitle_stream,
             overwrite,
             qffmpeg,
         )?,
